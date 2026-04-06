@@ -31,6 +31,8 @@ listaPokemones.forEach(pokemon => {
         const id = pokemon.getAttribute("data-id");
         let pokemonSelect = await TraerInfoDePokemonSeleccionado(id);
         console.log(pokemonSelect);
+        const pesoKg = (pokemonSelect.weight / 10).toFixed(1);
+        const alturaM = (pokemonSelect.height / 10).toFixed(1);
         let imagenUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/" + id + ".png";
         if(pokemonSelect.sprites.other["showdown"].front_default){
             imagenUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/" + id + ".gif";
@@ -38,7 +40,7 @@ listaPokemones.forEach(pokemon => {
 
         Swal.fire({
             title: `${pokemon.querySelector("h2").textContent}`,
-            text: `Peso: ${pokemonSelect.weight} Altura: ${pokemonSelect.height} Tipo: ${pokemonSelect.types.map(type => type.type.name).join(', ')}`,// informacion del pokemon seleccionado, peso, altura, tipo, etc
+            text: `Peso: ${pesoKg}kg Altura: ${alturaM}m Tipo: ${pokemonSelect.types.map(type => type.type.name).join(', ')}`,// informacion del pokemon seleccionado, peso, altura, tipo, etc
             imageUrl: `${imagenUrl}`,
             imageWidth: 250,
             imageHeight: 250,
