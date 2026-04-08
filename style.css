@@ -40,6 +40,45 @@ body {
     height: auto;
 }
 
+#darkModeToggle{
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 200px;
+    cursor: pointer;
+}
+
+.dark-mode-body {
+    background-color: #333;
+    color: #fff;
+}
+.dark-mode-body .pokemon-card {
+    background-color: #444;
+}
+.dark-mode-body .pokemon-card:active {
+    background-color: #555;
+}
+
+.dark-mode-body .swal2-popup {
+    background-color: #444;
+    color: #fff;
+}
+.dark-mode-body .swal2-title,
+.dark-mode-body .swal2-html-container {
+    color: #fff;
+}
+.dark-mode-body .swal2-confirm {
+    background-color: #555 !important;
+}
+
+.swal2-image {
+    width: fit-content;
+}
+
 @media (max-width: 600px) {
     .contenedor {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
