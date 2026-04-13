@@ -79,6 +79,62 @@ body {
     width: fit-content;
 }
 
+#pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 20px 0;
+    padding: 0 10px;
+}
+
+#pagination button {
+    background-color: #f2f2f2;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#pagination button:hover:not(:disabled) {
+    background-color: #e0e0e0;
+}
+
+#pagination button.active {
+    background-color: #333;
+    color: #fff;
+}
+
+#pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+#pagination span {
+    padding: 6px 4px;
+    color: #888;
+}
+
+.dark-mode-body #pagination button {
+    background-color: #444;
+    color: #fff;
+}
+
+.dark-mode-body #pagination button:hover:not(:disabled) {
+    background-color: #555;
+}
+
+.dark-mode-body #pagination button.active {
+    background-color: #666;
+}
+
+.dark-mode-body #pagination span {
+    color: #aaa;
+}
+
 @media (max-width: 600px) {
     .contenedor {
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));

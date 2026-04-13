@@ -1,17 +1,66 @@
 const CACHE_VERSION = "v1.2";
+const PAGE_SIZE = 20;
 
 const contenedor = document.querySelector(".contenedor");
+const paginationEl = document.getElementById("pagination");
 const darkModeToggle = document.getElementById("darkModeToggle");
 let allPokemons = [];
+let currentPage = 1;
 
 function renderPokemones(pokemones) {
-    contenedor.innerHTML = pokemones.map(pokemon => `
+    const totalPages = Math.ceil(pokemones.length / PAGE_SIZE);
+    if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const slice = pokemones.slice(start, start + PAGE_SIZE);
+
+    contenedor.innerHTML = slice.map(pokemon => `
         <div class="pokemon-card" data-id="${pokemon.id}">
             <h2>${pokemon.name.toUpperCase()}</h2>
             <p>ID: ${pokemon.id}</p>
             <img src="${pokemon.sprite}" alt="${pokemon.name}">
         </div>
     `).join('');
+
+    renderPagination(totalPages, pokemones);
+}
+
+function renderPagination(totalPages, pokemones) {
+    if (totalPages <= 1) {
+        paginationEl.innerHTML = '';
+        return;
+    }
+
+    let pages = [];
+    if (totalPages <= 5) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        let start = Math.max(2, currentPage - 1);
+        let end = Math.min(totalPages - 1, currentPage + 1);
+        pages = [1];
+        if (start > 2) pages.push('...');
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (end < totalPages - 1) pages.push('...');
+        pages.push(totalPages);
+    }
+
+    const btnPrev = `<button ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">&lt;</button>`;
+    const btnNext = `<button ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">&gt;</button>`;
+    const pageButtons = pages.map(p =>
+        p === '...'
+            ? `<span>...</span>`
+            : `<button class="${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`
+    ).join('');
+
+    paginationEl.innerHTML = btnPrev + pageButtons + btnNext;
+
+    paginationEl.querySelectorAll('button:not(:disabled)').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentPage = parseInt(btn.dataset.page);
+            renderPokemones(pokemones);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
 }
 
 async function fetchPokemones() {
@@ -112,6 +161,7 @@ function filteredPokemones() {
         return matchSearch && matchType;
     });
 
+    currentPage = 1;
     renderPokemones(filtered);
 }
 
