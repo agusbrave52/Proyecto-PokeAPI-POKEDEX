@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v1.2";
 
 const contenedor = document.querySelector(".contenedor");
 const darkModeToggle = document.getElementById("darkModeToggle");
@@ -55,6 +55,7 @@ async function fetchPokemones() {
             types: p.types.map(t => t.type.name),
             sprite: p.sprites.front_default,
             gif: p.sprites.other?.showdown?.front_default || null,
+            cry: p.id === 25 ? p.cries.legacy : p.cries.latest || null, // Pikachu tiene un cry especial
         }));
 
         allPokemons = allPokemons.concat(formateado);
@@ -73,6 +74,7 @@ contenedor.addEventListener("click", (event) => {
 
     const id = parseInt(card.getAttribute("data-id"));
     const pokemon = allPokemons.find(p => p.id === id); // sin fetch, todo ya está en memoria
+    const audio = new Audio(pokemon.cry);
 
     Swal.fire({
         title: pokemon.name.toUpperCase(),
@@ -81,6 +83,8 @@ contenedor.addEventListener("click", (event) => {
         imageHeight: 250,
         imageAlt: `Imagen de ${pokemon.name}`,
     });
+    audio.volume = 0.1;
+    audio.play();
 });
 
 
