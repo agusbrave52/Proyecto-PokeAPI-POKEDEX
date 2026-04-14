@@ -187,6 +187,8 @@ body {
 .dark-mode-body #aestheticFilter,
 .dark-mode-body #generationFilter,
 .dark-mode-body #shapeFilter,
+.dark-mode-body #evolutionStageFilter,
+.dark-mode-body #legendaryFilter,
 .dark-mode-body #searchInput {
     background: #444;
     color: #fff;
@@ -197,6 +199,8 @@ body {
 .dark-mode-body #aestheticFilter:hover,
 .dark-mode-body #generationFilter:hover,
 .dark-mode-body #shapeFilter:hover,
+.dark-mode-body #evolutionStageFilter:hover,
+.dark-mode-body #legendaryFilter:hover,
 .dark-mode-body #searchInput:hover {
     background: #555;
 }
