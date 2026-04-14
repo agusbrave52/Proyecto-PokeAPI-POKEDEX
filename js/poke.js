@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1.2";
+const CACHE_VERSION = "v1.4";
 const PAGE_SIZE = 20;
 
 const contenedor = document.querySelector(".contenedor");
@@ -6,6 +6,12 @@ const paginationEl = document.getElementById("pagination");
 const darkModeToggle = document.getElementById("darkModeToggle");
 let allPokemons = [];
 let currentPage = 1;
+const typeTranslations = {};
+
+
+document.querySelectorAll('#typeFilter option').forEach(opt => {
+    if (opt.value !== 'all') typeTranslations[opt.value] = opt.textContent;
+});
 
 function renderPokemones(pokemones) {
     const totalPages = Math.ceil(pokemones.length / PAGE_SIZE);
@@ -58,7 +64,7 @@ function renderPagination(totalPages, pokemones) {
         btn.addEventListener('click', () => {
             currentPage = parseInt(btn.dataset.page);
             renderPokemones(pokemones);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            /* window.scrollTo({ top: 0, behavior: 'smooth' }); */
         });
     });
 }
@@ -101,10 +107,11 @@ async function fetchPokemones() {
             name: p.name,
             weight: parseFloat((p.weight / 10).toFixed(1)),
             height: parseFloat((p.height / 10).toFixed(1)),
-            types: p.types.map(t => t.type.name),
+            types: p.types.map(t => t.type.name),                              // inglés → para filtrar
+            typesEs: p.types.map(t => typeTranslations[t.type.name] || t.type.name), // español → para mostrar
             sprite: p.sprites.front_default,
             gif: p.sprites.other?.showdown?.front_default || null,
-            cry: p.id === 25 ? p.cries.legacy : p.cries.latest || null, // Pikachu tiene un cry especial
+            cry: p.cries.latest || null,
         }));
 
         allPokemons = allPokemons.concat(formateado);
@@ -127,7 +134,7 @@ contenedor.addEventListener("click", (event) => {
 
     Swal.fire({
         title: pokemon.name.toUpperCase(),
-        text: `Peso: ${pokemon.weight}kg  Altura: ${pokemon.height}m  Tipo: ${pokemon.types.join(', ')}`,
+        text: `Peso: ${pokemon.weight}kg  Altura: ${pokemon.height}m  Tipo: ${pokemon.typesEs.join(', ')}`,
         imageUrl: pokemon.gif || pokemon.sprite,
         imageHeight: 250,
         imageAlt: `Imagen de ${pokemon.name}`,
