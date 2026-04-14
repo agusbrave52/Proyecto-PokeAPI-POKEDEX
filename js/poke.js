@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1.5";
+const CACHE_VERSION = "v2.2";
 const PAGE_SIZE = 20;
 
 const contenedor = document.querySelector(".contenedor");
@@ -6,6 +6,7 @@ const paginationEl = document.getElementById("pagination");
 const darkModeToggle = document.getElementById("darkModeToggle");
 let allPokemons = [];
 let currentPage = 1;
+let selectedFeatures = [];
 const typeTranslations = {};
 
 
@@ -69,6 +70,64 @@ function renderPagination(totalPages, pokemones) {
     });
 }
 
+async function renderFeaturesOptions() {
+    const features = await fetch('./data/pokemon_features.json').then(res => res.json());
+    const list = document.getElementById('featureList');
+    const toggle = document.getElementById('featureToggle');
+    const dropdown = document.getElementById('featureDropdown');
+    const searchInput = dropdown.querySelector('.multiselect-search');
+    const clearBtn = document.getElementById('featureClear');
+
+    list.innerHTML = features.map(f => `
+        <label class="multiselect-item">
+            <input type="checkbox" value="${f}"> ${f.replace(/_/g, ' ')}
+        </label>
+    `).join('');
+
+    // Abrir/cerrar dropdown
+    toggle.addEventListener('click', e => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) searchInput.focus();
+    });
+
+    // Cerrar al hacer click fuera
+    document.addEventListener('click', () => dropdown.classList.add('hidden'));
+    dropdown.addEventListener('click', e => e.stopPropagation());
+
+    // Normalizar texto para búsqueda (ignorar acentos y mayúsculas)
+    const normalize = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+    // Buscar dentro del dropdown
+    searchInput.addEventListener('input', () => {
+        const term = normalize(searchInput.value).replace(/ /g, '_');
+        list.querySelectorAll('.multiselect-item').forEach(item => {
+            item.style.display = normalize(item.querySelector('input').value).includes(term) ? '' : 'none';
+        });
+    });
+
+    // Filtrar al marcar/desmarcar
+    list.addEventListener('change', () => {
+        selectedFeatures = Array.from(list.querySelectorAll('input:checked')).map(i => i.value);
+        toggle.textContent = selectedFeatures.length === 0
+            ? 'Todas ▼'
+            : `${selectedFeatures.length} seleccionada${selectedFeatures.length > 1 ? 's' : ''} ▼`;
+        currentPage = 1;
+        filteredPokemones();
+    });
+
+    // Limpiar selección
+    clearBtn.addEventListener('click', () => {
+        list.querySelectorAll('input:checked').forEach(i => i.checked = false);
+        selectedFeatures = [];
+        toggle.textContent = 'Todas ▼';
+        currentPage = 1;
+        filteredPokemones();
+    });
+}
+
+renderFeaturesOptions();
+
 async function fetchPokemones() {
     const cachedVersion = localStorage.getItem("pokemones_version");
     if (cachedVersion !== CACHE_VERSION) {
@@ -83,43 +142,24 @@ async function fetchPokemones() {
         return;
     }
 
-    // 1. Traer la lista completa de especies (solo name + url)
-    let allSpecies = [];
-    let nextUrl = 'https://pokeapi.co/api/v2/pokemon-species?limit=100';
-    while (nextUrl) {
-        const res = await fetch(nextUrl);
-        const data = await res.json();
-        allSpecies = allSpecies.concat(data.results);
-        nextUrl = data.next;
-    }
+    const data = await fetch('./data/pokemon_1-1025.json').then(res => res.json());
 
-    // 2. Traer el detalle de cada pokemon en lotes de 20
-    const BATCH_SIZE = 20;
-    for (let i = 0; i < allSpecies.length; i += BATCH_SIZE) {
-        const lote = allSpecies.slice(i, i + BATCH_SIZE);
-        const detalle = await Promise.all(
-            lote.map(p => fetch(`https://pokeapi.co/api/v2/pokemon/${p.url.split('/')[6]}`).then(r => r.json()))
-        );
-
-        // 3. Armar el formato custom
-        const formateado = detalle.map(p => ({
-            id: p.id,
-            name: p.name,
-            weight: parseFloat((p.weight / 10).toFixed(1)),
-            height: parseFloat((p.height / 10).toFixed(1)),
-            types: p.types.map(t => t.type.name),                              // inglés → para filtrar
-            typesEs: p.types.map(t => typeTranslations[t.type.name] || t.type.name), // español → para mostrar
-            sprite: p.sprites.front_default,
-            gif: p.sprites.other?.showdown?.front_default || null,
-            cry: p.cries.latest || null,
-        }));
-
-        allPokemons = allPokemons.concat(formateado);
-        renderPokemones(allPokemons); // actualiza la UI a medida que llegan lotes
-    }
+    allPokemons = data.map(p => ({
+        id: p.id,
+        name: p.name,
+        weight: p.weight_kg,
+        height: p.height_m,
+        types: p.types,
+        typesEs: p.types.map(t => typeTranslations[t] || t),
+        sprite: p.sprites.front,
+        gif: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${p.id}.gif`,
+        cry: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${p.id}.ogg`,
+        features: p.ai_analysis?.features ? p.ai_analysis.features.split(',') : [],
+    }));
 
     localStorage.setItem("pokemones", JSON.stringify(allPokemons));
     localStorage.setItem("pokemones_version", CACHE_VERSION);
+    renderPokemones(allPokemons);
 }
 fetchPokemones();
 
@@ -134,7 +174,7 @@ contenedor.addEventListener("click", (event) => {
 
     Swal.fire({
         title: pokemon.name.toUpperCase(),
-        text: `Peso: ${pokemon.weight}kg  Altura: ${pokemon.height}m  Tipo: ${pokemon.typesEs.join(', ')}`,
+        text: `Peso: ${pokemon.weight}kg  Altura: ${pokemon.height}m  Tipo: ${pokemon.typesEs.join(', ')}` + `\nCaracterísticas: ${pokemon.features.join(', ').replace(/_/g, ' ')}`,
         imageUrl: pokemon.gif || pokemon.sprite,
         imageHeight: 250,
         imageAlt: `Imagen de ${pokemon.name}`,
@@ -165,7 +205,9 @@ function filteredPokemones() {
     const filtered = allPokemons.filter(pokemon => {
         const matchSearch = pokemon.name.includes(searchTerm);
         const matchType = typeFilter === "all" || pokemon.types.includes(typeFilter);
-        return matchSearch && matchType;
+        const matchFeatures = selectedFeatures.length === 0 ||
+            selectedFeatures.some(f => pokemon.features.includes(f));
+        return matchSearch && matchType && matchFeatures;
     });
 
     currentPage = 1;
