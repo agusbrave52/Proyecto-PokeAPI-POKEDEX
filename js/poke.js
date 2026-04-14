@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1.4";
+const CACHE_VERSION = "v1.5";
 const PAGE_SIZE = 20;
 
 const contenedor = document.querySelector(".contenedor");
