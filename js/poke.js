@@ -1,6 +1,14 @@
 const CACHE_VERSION = "v2.8";
 const PAGE_SIZE = 20;
 
+const TYPE_COLORS = {
+    normal: '#9da09e', fire: '#ff6b3d', water: '#5185f0', electric: '#f5c518',
+    grass: '#5fae42', ice: '#74cec8', fighting: '#c13428', poison: '#9f40a0',
+    ground: '#d4a830', flying: '#8b78e6', psychic: '#f5457b', bug: '#82a615',
+    rock: '#a69028', ghost: '#6358aa', dragon: '#5a35f0', dark: '#5a4a44',
+    steel: '#9898bb', fairy: '#e8749a',
+};
+
 const contenedor = document.querySelector(".contenedor");
 const paginationEl = document.getElementById("pagination");
 const darkModeToggle = document.getElementById("darkModeToggle");
@@ -24,13 +32,31 @@ function renderPokemones(pokemones) {
     const start = (currentPage - 1) * PAGE_SIZE;
     const slice = pokemones.slice(start, start + PAGE_SIZE);
 
-    contenedor.innerHTML = slice.map(pokemon => `
-        <div class="pokemon-card ${pokemon.legendary ? 'legendary' : ''}" data-id="${pokemon.id}">
-            <h2>${pokemon.name.toUpperCase()}</h2>
-            <p>ID: ${pokemon.id}</p>
-            <img src="${pokemon.sprite}" alt="${pokemon.name}">
-        </div>
-    `).join('');
+    const resultsCount = document.getElementById('resultsCount');
+    if (resultsCount) {
+        resultsCount.textContent = `${pokemones.length} Pokémon encontrado${pokemones.length !== 1 ? 's' : ''}`;
+    }
+
+    if (slice.length === 0) {
+        contenedor.innerHTML = '<p class="empty-state">No se encontraron Pokémon con estos filtros.</p>';
+        paginationEl.innerHTML = '';
+        return;
+    }
+
+    contenedor.innerHTML = slice.map(pokemon => {
+        const typeColor = TYPE_COLORS[pokemon.types[0]] || '#9da09e';
+        const typeBadges = pokemon.types.map(t =>
+            `<span class="type-badge type-${t}">${typeTranslations[t] || t}</span>`
+        ).join('');
+        return `
+            <div class="pokemon-card ${pokemon.legendary ? 'legendary' : ''}" data-id="${pokemon.id}" style="--type-color:${typeColor}">
+                <span class="pokemon-id">#${String(pokemon.id).padStart(3, '0')}</span>
+                <img src="${pokemon.sprite}" alt="${pokemon.name}" loading="lazy">
+                <p class="pokemon-name">${pokemon.name.toUpperCase()}</p>
+                <div class="card-types">${typeBadges}</div>
+            </div>
+        `;
+    }).join('');
 
     renderPagination(totalPages, pokemones);
 }
@@ -266,15 +292,9 @@ contenedor.addEventListener("click", async (event) => {
 
 darkModeToggle.addEventListener("click", () => {
     document.body.classList.toggle("dark-mode-body");
-    if (document.body.classList.contains("dark-mode-body")) {
-        darkModeToggle.textContent = "Light Mode";
-        darkModeToggle.style.backgroundColor = "#fff";
-        darkModeToggle.style.color = "#333";
-    } else {
-        darkModeToggle.textContent = "Dark Mode";
-        darkModeToggle.style.backgroundColor = "#333";
-        darkModeToggle.style.color = "#fff";
-    }
+    darkModeToggle.innerHTML = document.body.classList.contains("dark-mode-body")
+        ? '<span>☀️ Light</span>'
+        : '<span>🌙 Dark</span>';
 });
 
 

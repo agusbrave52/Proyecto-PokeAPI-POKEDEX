@@ -1,92 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proyecto PokeAPI</title>
+    <title>Pokédex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
 </head>
 
 <body>
-    <button id="darkModeToggle">Dark Mode</button>
-    <div class="busqueda">
-        <label for="searchInput">Buscar por nombre: </label>
-        <input type="text" id="searchInput" placeholder="Pikachu...">
-    </div>
-    <div class="filtro">
-        <label for="typeFilter">Filtrar por tipo: </label>
-        <select id="typeFilter">
-            <option value="all">Todos</option>
-            <option value="normal">Normal</option>
-            <option value="fire">Fuego</option>
-            <option value="water">Agua</option>
-            <option value="electric">Eléctrico</option>
-            <option value="grass">Planta</option>
-            <option value="ice">Hielo</option>
-            <option value="fighting">Lucha</option>
-            <option value="poison">Veneno</option>
-            <option value="ground">Tierra</option>
-            <option value="flying">Volador</option>
-            <option value="psychic">Psíquico</option>
-            <option value="bug">Bicho</option>
-            <option value="rock">Roca</option>
-            <option value="ghost">Fantasma</option>
-            <option value="dragon">Dragón</option>
-            <option value="dark">Siniestro</option>
-            <option value="steel">Acero</option>
-            <option value="fairy">Hada</option>
-        </select>
-    </div>
-    <div class="filtroFeatures">
-        <label>Filtrar por características físicas (IA): </label>
-        <div class="multiselect-wrapper" id="featureFilter">
-            <button type="button" class="multiselect-btn" id="featureToggle">Todas ▼</button>
-            <div class="multiselect-dropdown hidden" id="featureDropdown">
-                <input type="text" class="multiselect-search" placeholder="Buscar característica...">
-                <div class="multiselect-list" id="featureList"></div>
-                <button type="button" class="multiselect-clear" id="featureClear">Limpiar selección</button>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-title">
+                <div class="pokeball"></div>
+                <h1>Pokédex</h1>
             </div>
+            <button id="darkModeToggle" class="theme-btn">
+                <span>🌙 Dark</span>
+            </button>
         </div>
-    </div>
-    <div class="filtroAesthetic">
-        <label for="aestheticFilter">Filtrar por estética (IA): </label>
-        <select id="aestheticFilter">
-            <option value="all">Todas</option>
-        </select>
-    </div>
-    <div class="filtroGenerations">
-        <label for="generationFilter">Filtrar por generación: </label>
-        <select id="generationFilter">
-            <option value="all">Todas</option>
-        </select>
-    </div>
-    <div class="filtroForma">
-        <label for="shapeFilter">Filtrar por forma: </label>
-        <select id="shapeFilter">
-            <option value="all">Todas</option>
-        </select>
-    </div>
-    <div class="filtroStage">
-        <label for="evolutionStageFilter">Filtrar por etapa evolutiva: </label>
-        <select id="evolutionStageFilter">
-            <option value="all">Todas</option>
-            <option value="1">Etapa 1</option>
-            <option value="2">Etapa 2</option>
-            <option value="3">Etapa 3</option>
-        </select>
-    </div>
-    <div class="filtroLegendary">
-        <label for="legendaryFilter">Mostrar solo legendarios: </label>
-        <input type="checkbox" id="legendaryFilter">
-    </div>
+    </header>
 
+    <main class="main">
+        <div class="search-section">
+            <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Buscar Pokémon por nombre...">
+            </div>
+            <div id="resultsCount" class="results-count"></div>
+        </div>
 
-    <div class="contenedor">
+        <details class="filters-panel" open>
+            <summary class="filters-summary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                Filtros
+                <span class="filters-arrow">▾</span>
+            </summary>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="typeFilter">Tipo</label>
+                    <select id="typeFilter">
+                        <option value="all">Todos</option>
+                        <option value="normal">Normal</option>
+                        <option value="fire">Fuego</option>
+                        <option value="water">Agua</option>
+                        <option value="electric">Eléctrico</option>
+                        <option value="grass">Planta</option>
+                        <option value="ice">Hielo</option>
+                        <option value="fighting">Lucha</option>
+                        <option value="poison">Veneno</option>
+                        <option value="ground">Tierra</option>
+                        <option value="flying">Volador</option>
+                        <option value="psychic">Psíquico</option>
+                        <option value="bug">Bicho</option>
+                        <option value="rock">Roca</option>
+                        <option value="ghost">Fantasma</option>
+                        <option value="dragon">Dragón</option>
+                        <option value="dark">Siniestro</option>
+                        <option value="steel">Acero</option>
+                        <option value="fairy">Hada</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="generationFilter">Generación</label>
+                    <select id="generationFilter">
+                        <option value="all">Todas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="aestheticFilter">Estética (IA)</label>
+                    <select id="aestheticFilter">
+                        <option value="all">Todas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="shapeFilter">Forma</label>
+                    <select id="shapeFilter">
+                        <option value="all">Todas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="evolutionStageFilter">Etapa evolutiva</label>
+                    <select id="evolutionStageFilter">
+                        <option value="all">Todas</option>
+                        <option value="1">Etapa 1</option>
+                        <option value="2">Etapa 2</option>
+                        <option value="3">Etapa 3</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Características (IA)</label>
+                    <div class="multiselect-wrapper" id="featureFilter">
+                        <button type="button" class="multiselect-btn" id="featureToggle">Todas ▼</button>
+                        <div class="multiselect-dropdown hidden" id="featureDropdown">
+                            <input type="text" class="multiselect-search" placeholder="Buscar característica...">
+                            <div class="multiselect-list" id="featureList"></div>
+                            <button type="button" class="multiselect-clear" id="featureClear">Limpiar selección</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group filter-legendary">
+                    <label>Solo legendarios</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="legendaryFilter">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </details>
 
-    </div>
-    <div id="pagination"></div>
+        <div class="contenedor"></div>
+        <div id="pagination"></div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="./js/poke.js"></script>
