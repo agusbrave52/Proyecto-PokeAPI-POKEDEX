@@ -16,46 +16,119 @@ let allPokemons = [];
 let currentPage = 1;
 let selectedFeatures = [];
 const typeTranslations = {};
-let allShapes = [];
-let allGenerations = [];
-let allAesthetics = [];
 
-
-document.querySelectorAll('#typeFilter option').forEach(opt => {
+document.querySelectorAll('#typeFilter option').forEach(function(opt) {
     if (opt.value !== 'all') typeTranslations[opt.value] = opt.textContent;
 });
 
+function stripAccents(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+/* ── Features dropdown ────────────────────────────────── */
+
+function setupFeaturesDropdown() {
+    var list = document.getElementById('featureList');
+    var toggle = document.getElementById('featureToggle');
+    var dropdown = document.getElementById('featureDropdown');
+    var searchInput = dropdown.querySelector('.multiselect-search');
+    var clearBtn = document.getElementById('featureClear');
+
+    toggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+        if (!dropdown.classList.contains('hidden')) searchInput.focus();
+    });
+
+    document.addEventListener('click', function() { dropdown.classList.add('hidden'); });
+    dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+
+    searchInput.addEventListener('input', function() {
+        var term = stripAccents(searchInput.value).replace(/ /g, '_');
+        list.querySelectorAll('.multiselect-item').forEach(function(item) {
+            item.style.display = stripAccents(item.querySelector('input').value).includes(term) ? '' : 'none';
+        });
+    });
+
+    list.addEventListener('change', function() {
+        selectedFeatures = Array.from(list.querySelectorAll('input:checked')).map(function(i) { return i.value; });
+        toggle.textContent = selectedFeatures.length === 0
+            ? 'Todas'
+            : selectedFeatures.length + ' seleccionada' + (selectedFeatures.length > 1 ? 's' : '');
+        currentPage = 1;
+        filteredPokemones();
+    });
+
+    clearBtn.addEventListener('click', function() {
+        list.querySelectorAll('input:checked').forEach(function(i) { i.checked = false; });
+        selectedFeatures = [];
+        toggle.textContent = 'Todas';
+        currentPage = 1;
+        filteredPokemones();
+    });
+}
+
+function populateFeaturesDropdown() {
+    var featureSet = {};
+    allPokemons.forEach(function(p) {
+        p.features.forEach(function(f) {
+            if (f && f.trim()) featureSet[f.trim()] = true;
+        });
+    });
+    var features = Object.keys(featureSet).sort();
+    var list = document.getElementById('featureList');
+    list.innerHTML = features.map(function(f) {
+        return '<label class="multiselect-item"><input type="checkbox" value="' + f + '"> ' + f.replace(/_/g, ' ') + '</label>';
+    }).join('');
+}
+
+setupFeaturesDropdown();
+
+/* ── Render ───────────────────────────────────────────── */
+
 function renderPokemones(pokemones) {
-    const totalPages = Math.ceil(pokemones.length / PAGE_SIZE);
+    var totalPages = Math.ceil(pokemones.length / PAGE_SIZE);
     if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
 
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const slice = pokemones.slice(start, start + PAGE_SIZE);
+    var start = (currentPage - 1) * PAGE_SIZE;
+    var slice = pokemones.slice(start, start + PAGE_SIZE);
 
-    const resultsCount = document.getElementById('resultsCount');
+    var resultsCount = document.getElementById('resultsCount');
     if (resultsCount) {
-        resultsCount.textContent = `${pokemones.length} Pokémon encontrado${pokemones.length !== 1 ? 's' : ''}`;
+        resultsCount.textContent = pokemones.length + ' Pokemon encontrados';
     }
 
     if (slice.length === 0) {
-        contenedor.innerHTML = '<p class="empty-state">No se encontraron Pokémon con estos filtros.</p>';
+        contenedor.innerHTML = '<p class="empty-state">No se encontraron Pokemon con estos filtros.</p>';
         paginationEl.innerHTML = '';
         return;
     }
 
-    contenedor.innerHTML = slice.map(pokemon => {
-        const typeColor = TYPE_COLORS[pokemon.types[0]] || '#9da09e';
-        const typeBadges = pokemon.types.map(t =>
-            `<span class="type-badge type-${t}">${typeTranslations[t] || t}</span>`
-        ).join('');
-        return `
-            <div class="pokemon-card ${pokemon.legendary ? 'legendary' : ''}" data-id="${pokemon.id}" style="--type-color:${typeColor}">
-                <span class="pokemon-id">#${String(pokemon.id).padStart(3, '0')}</span>
-                <img src="${pokemon.sprite}" alt="${pokemon.name}" loading="lazy">
-                <p class="pokemon-name">${pokemon.name.toUpperCase()}</p>
-                <div class="card-types">${typeBadges}</div>
-            </div>
-        `;
+    contenedor.innerHTML = slice.map(function(pokemon) {
+        var typeColor = TYPE_COLORS[pokemon.types[0]] || '#9da09e';
+        var typeBadges = pokemon.types.map(function(t) {
+            return '<span class="type-badge type-' + t + '">' + (typeTranslations[t] || t) + '</span>';
+        }).join('');
+        var star = pokemon.legendary ? '<span class="legendary-star">&#9733;</span>' : '';
+        var legendaryClass = pokemon.legendary ? 'legendary' : '';
+        var idStr = '#' + String(pokemon.id).padStart(3, '0');
+        var genus = pokemon.genus || '';
+        return '<div class="pokemon-card ' + legendaryClass + '" data-id="' + pokemon.id + '" style="--type-color:' + typeColor + '">' +
+            '<div class="card-inner">' +
+                '<div class="card-header">' +
+                    '<span class="pokemon-name">' + pokemon.name.toUpperCase() + '</span>' +
+                    star +
+                    '<div class="card-types">' + typeBadges + '</div>' +
+                '</div>' +
+                '<div class="card-image-wrap">' +
+                    '<img src="' + pokemon.sprite + '" alt="' + pokemon.name + '" loading="lazy">' +
+                '</div>' +
+                '<div class="card-footer">' +
+                    '<span class="pokemon-id">' + idStr + '</span>' +
+                    '<span class="pokemon-genus">' + genus + '</span>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
     }).join('');
 
     renderPagination(totalPages, pokemones);
@@ -67,257 +140,220 @@ function renderPagination(totalPages, pokemones) {
         return;
     }
 
-    let pages = [];
+    var pages = [];
     if (totalPages <= 5) {
-        for (let i = 1; i <= totalPages; i++) pages.push(i);
+        for (var i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-        let start = Math.max(2, currentPage - 1);
-        let end = Math.min(totalPages - 1, currentPage + 1);
+        var s = Math.max(2, currentPage - 1);
+        var e = Math.min(totalPages - 1, currentPage + 1);
         pages = [1];
-        if (start > 2) pages.push('...');
-        for (let i = start; i <= end; i++) pages.push(i);
-        if (end < totalPages - 1) pages.push('...');
+        if (s > 2) pages.push('...');
+        for (var j = s; j <= e; j++) pages.push(j);
+        if (e < totalPages - 1) pages.push('...');
         pages.push(totalPages);
     }
 
-    const btnPrev = `<button ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">&lt;</button>`;
-    const btnNext = `<button ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">&gt;</button>`;
-    const pageButtons = pages.map(p =>
-        p === '...'
-            ? `<span>...</span>`
-            : `<button class="${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`
-    ).join('');
+    var btnPrev = '<button ' + (currentPage === 1 ? 'disabled' : '') + ' data-page="' + (currentPage - 1) + '">&lt;</button>';
+    var btnNext = '<button ' + (currentPage === totalPages ? 'disabled' : '') + ' data-page="' + (currentPage + 1) + '">&gt;</button>';
+    var pageButtons = pages.map(function(p) {
+        if (p === '...') return '<span>...</span>';
+        return '<button class="' + (p === currentPage ? 'active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    }).join('');
 
     paginationEl.innerHTML = btnPrev + pageButtons + btnNext;
 
-    paginationEl.querySelectorAll('button:not(:disabled)').forEach(btn => {
-        btn.addEventListener('click', () => {
+    paginationEl.querySelectorAll('button:not(:disabled)').forEach(function(btn) {
+        btn.addEventListener('click', function() {
             currentPage = parseInt(btn.dataset.page);
             renderPokemones(pokemones);
-            /* window.scrollTo({ top: 0, behavior: 'smooth' }); */
         });
     });
 }
 
-async function renderFeaturesOptions() {
-    const features = await fetch('./data/pokemon_features.json').then(res => res.json());
-    const list = document.getElementById('featureList');
-    const toggle = document.getElementById('featureToggle');
-    const dropdown = document.getElementById('featureDropdown');
-    const searchInput = dropdown.querySelector('.multiselect-search');
-    const clearBtn = document.getElementById('featureClear');
+/* ── Filters ──────────────────────────────────────────── */
 
-    list.innerHTML = features.map(f => `
-        <label class="multiselect-item">
-            <input type="checkbox" value="${f}"> ${f.replace(/_/g, ' ')}
-        </label>
-    `).join('');
+function renderFilters() {
+    var allAesthetics = allPokemons.map(function(p) { return p.aesthetic; })
+        .filter(function(a, i, arr) { return a && a !== 'unknown' && arr.indexOf(a) === i; });
+    var allGenerations = allPokemons.map(function(p) { return p.generation; })
+        .filter(function(g, i, arr) { return g !== null && g !== undefined && arr.indexOf(g) === i; })
+        .sort(function(a, b) { return a - b; });
+    var allShapes = allPokemons.map(function(p) { return p.shape; })
+        .filter(function(s, i, arr) { return s && arr.indexOf(s) === i; });
 
-    // Abrir/cerrar dropdown
-    toggle.addEventListener('click', e => {
-        e.stopPropagation();
-        dropdown.classList.toggle('hidden');
-        if (!dropdown.classList.contains('hidden')) searchInput.focus();
-    });
-
-    // Cerrar al hacer click fuera
-    document.addEventListener('click', () => dropdown.classList.add('hidden'));
-    dropdown.addEventListener('click', e => e.stopPropagation());
-
-    // Normalizar texto para búsqueda (ignorar acentos y mayúsculas)
-    const normalize = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-    // Buscar dentro del dropdown
-    searchInput.addEventListener('input', () => {
-        const term = normalize(searchInput.value).replace(/ /g, '_');
-        list.querySelectorAll('.multiselect-item').forEach(item => {
-            item.style.display = normalize(item.querySelector('input').value).includes(term) ? '' : 'none';
-        });
-    });
-
-    // Filtrar al marcar/desmarcar
-    list.addEventListener('change', () => {
-        selectedFeatures = Array.from(list.querySelectorAll('input:checked')).map(i => i.value);
-        toggle.textContent = selectedFeatures.length === 0
-            ? 'Todas ▼'
-            : `${selectedFeatures.length} seleccionada${selectedFeatures.length > 1 ? 's' : ''} ▼`;
-        currentPage = 1;
-        filteredPokemones();
-    });
-
-    // Limpiar selección
-    clearBtn.addEventListener('click', () => {
-        list.querySelectorAll('input:checked').forEach(i => i.checked = false);
-        selectedFeatures = [];
-        toggle.textContent = 'Todas ▼';
-        currentPage = 1;
-        filteredPokemones();
-    });
-}
-
-renderFeaturesOptions();
-
-async function fetchPokemones() {
-    const cachedVersion = localStorage.getItem("pokemones_version");
-    if (cachedVersion !== CACHE_VERSION) {
-        localStorage.removeItem("pokemones");
-        localStorage.removeItem("pokemones_version");
-    }
-
-    const cached = localStorage.getItem("pokemones");
-    if (cached) {
-        allPokemons = JSON.parse(cached);
-        renderFilters(allPokemons);
-        renderPokemones(allPokemons);
-        return;
-    }
-
-    const data = await fetch('./data/pokemon_1-1025.json').then(res => res.json());
-
-    allPokemons = data.map(p => ({
-        id: p.id,
-        name: p.name,
-        weight: p.weight_kg,
-        height: p.height_m,
-        types: p.types,
-        typesEs: p.types.map(t => typeTranslations[t] || t),
-        sprite: p.sprites.front,
-        gif: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${p.id}.gif`,
-        cry: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${p.id}.ogg`,
-        features: p.ai_analysis?.features ? p.ai_analysis.features.split(',') : [],
-        aesthetic: p.ai_analysis?.aesthetic || 'unknown',
-        shiny: p.sprites.shiny || null,
-        generation: p.generation || null,
-        shape: p.official.shape_es || null,
-        genus: p.official.genus_es || null,
-        legendary: p.official.legendary === 'Sí' ? true : false,
-        evolutionFrom: p.evolves_from || null,
-        evolutionStage: p.evolution_stage || null,
-    }));
-    renderFilters(allPokemons);
-    
-
-    localStorage.setItem("pokemones", JSON.stringify(allPokemons));
-    localStorage.setItem("pokemones_version", CACHE_VERSION);
-    renderPokemones(allPokemons);
-}
-fetchPokemones();
-
-
-function checkImage(url) {
-    return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-        img.src = url;
-    });
-}
-
-function renderFilters(){
-    allAesthetics = [...new Set(allPokemons.map(p => p.aesthetic))].filter(a => a !== 'unknown');
-    allGenerations = [...new Set(allPokemons.map(p => p.generation))].filter(g => g !== null);
-    allShapes = [...new Set(allPokemons.map(p => p.shape))].filter(s => s !== null);
-    allGenerations = [...new Set(allPokemons.map(p => p.generation))].filter(g => g !== null);
-
-    const aestheticFilter = document.getElementById('aestheticFilter');
-    allAesthetics.forEach(a => {
-        const option = document.createElement('option');
+    var aestheticFilter = document.getElementById('aestheticFilter');
+    allAesthetics.forEach(function(a) {
+        var option = document.createElement('option');
         option.value = a;
         option.textContent = a.charAt(0).toUpperCase() + a.slice(1);
         aestheticFilter.appendChild(option);
-        
     });
 
-    const generationFilter = document.getElementById('generationFilter');
-    allGenerations.forEach(g => {
-        const option = document.createElement('option');
+    var generationFilter = document.getElementById('generationFilter');
+    allGenerations.forEach(function(g) {
+        var option = document.createElement('option');
         option.value = g;
-        option.textContent = `Generación ${g}`;
+        option.textContent = 'Generacion ' + g;
         generationFilter.appendChild(option);
     });
 
-    const shapeFilter = document.getElementById('shapeFilter');
-    allShapes.forEach(s => {
-        const option = document.createElement('option');
+    var shapeFilter = document.getElementById('shapeFilter');
+    allShapes.forEach(function(s) {
+        var option = document.createElement('option');
         option.value = s;
         option.textContent = s.charAt(0).toUpperCase() + s.slice(1);
         shapeFilter.appendChild(option);
     });
 }
 
-contenedor.addEventListener("click", async (event) => {
-    const card = event.target.closest(".pokemon-card");
+/* ── Data loading ─────────────────────────────────────── */
+
+async function fetchPokemones() {
+    var cachedVersion = localStorage.getItem("pokemones_version");
+    if (cachedVersion !== CACHE_VERSION) {
+        localStorage.removeItem("pokemones");
+        localStorage.removeItem("pokemones_version");
+    }
+
+    var cached = localStorage.getItem("pokemones");
+    if (cached) {
+        try {
+            allPokemons = JSON.parse(cached);
+            renderFilters();
+            populateFeaturesDropdown();
+            renderPokemones(allPokemons);
+            return;
+        } catch (e) {
+            localStorage.removeItem("pokemones");
+            localStorage.removeItem("pokemones_version");
+        }
+    }
+
+    try {
+        var data = await fetch('./data/pokemon_1-1025.json').then(function(res) { return res.json(); });
+
+        allPokemons = data.map(function(p) {
+            var official = p.official || {};
+            return {
+                id: p.id,
+                name: p.name,
+                weight: p.weight_kg,
+                height: p.height_m,
+                types: p.types || [],
+                typesEs: (p.types || []).map(function(t) { return typeTranslations[t] || t; }),
+                sprite: p.sprites ? p.sprites.front : '',
+                gif: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/' + p.id + '.gif',
+                cry: 'https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/' + p.id + '.ogg',
+                features: p.ai_analysis && p.ai_analysis.features ? p.ai_analysis.features.split(',').map(function(f) { return f.trim(); }) : [],
+                aesthetic: (p.ai_analysis && p.ai_analysis.aesthetic) || 'unknown',
+                shiny: p.sprites ? p.sprites.shiny || null : null,
+                generation: p.generation || null,
+                shape: official.shape_es || null,
+                genus: official.genus_es || null,
+                legendary: official.legendary === 'Si' || official.legendary === 'Sí',
+                evolutionFrom: p.evolves_from || null,
+                evolutionStage: p.evolution_stage || null,
+            };
+        });
+
+        renderFilters();
+        populateFeaturesDropdown();
+        localStorage.setItem("pokemones", JSON.stringify(allPokemons));
+        localStorage.setItem("pokemones_version", CACHE_VERSION);
+        renderPokemones(allPokemons);
+    } catch (err) {
+        contenedor.innerHTML = '<p class="empty-state">Error cargando datos: ' + err.message + '</p>';
+    }
+}
+
+fetchPokemones();
+
+/* ── Card click → modal ───────────────────────────────── */
+
+function checkImage(url) {
+    return new Promise(function(resolve) {
+        var img = new Image();
+        img.onload = function() { resolve(true); };
+        img.onerror = function() { resolve(false); };
+        img.src = url;
+    });
+}
+
+contenedor.addEventListener("click", async function(event) {
+    var card = event.target.closest(".pokemon-card");
     if (!card) return;
 
-    const id = parseInt(card.getAttribute("data-id"));
-    const pokemon = allPokemons.find(p => p.id === id); // sin fetch, todo ya está en memoria
-    const audio = new Audio(pokemon.cry);
+    var id = parseInt(card.getAttribute("data-id"));
+    var pokemon = allPokemons.find(function(p) { return p.id === id; });
+    if (!pokemon) return;
 
-    const gifExists = await checkImage(pokemon.gif);
-    const imageUrl = gifExists ? pokemon.gif : pokemon.sprite;
-    
+    var audio = new Audio(pokemon.cry);
+    var gifExists = await checkImage(pokemon.gif);
+    var imageUrl = gifExists ? pokemon.gif : pokemon.sprite;
 
-    const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
+    function cap(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1) : ''; }
+
     Swal.fire({
-        title: `#${pokemon.id} — ${cap(pokemon.name)}`,
-        html: `
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; text-align:left; font-size:1.2rem; margin-bottom:10px;">
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">TIPO</span>${pokemon.typesEs.join(', ')}</div>
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">GENERACIÓN</span>${pokemon.generation ?? 'Desconocida'}</div>
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">PESO</span>${pokemon.weight} kg</div>
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">ALTURA</span>${pokemon.height} m</div>
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">FORMA</span>${pokemon.shape ? cap(pokemon.shape) : 'Desconocida'}</div>
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">ESTÉTICA</span>${pokemon.aesthetic ? cap(pokemon.aesthetic) : 'Desconocida'}</div>
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">ETAPA EVOLUTIVA</span>${pokemon.evolutionStage ? `Etapa ${pokemon.evolutionStage}` : 'Desconocida'}</div>
-                <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">EVOLUCIONA DE</span>${pokemon.evolutionFrom ? cap(pokemon.evolutionFrom) : 'Forma base'}</div>
-            </div>
-            <div style="text-align:left; font-size:1.2rem; margin-bottom:6px;">
-                <span style="color:#888; font-size:1rem; font-weight:bold; display:block">GÉNERO</span>${pokemon.genus || 'Desconocido'}
-            </div>
-            <div style="text-align:left; font-size:0.8rem; color:#666; border-top:1px solid #eee; padding-top:8px; margin-top:4px; line-height:1.6">
-                <span style="color:#888; font-size:1rem; font-weight:bold; display:block; margin-bottom:2px">CARACTERÍSTICAS</span>
-                ${pokemon.features.map(f => `<span style="display:inline-block; background:#f2f2f2; border-radius:4px; padding:1px 6px; margin:2px">${f.replace(/_/g, ' ')}</span>`).join('')}
-            </div>
-        `,
-        imageUrl,
+        title: '#' + pokemon.id + ' - ' + cap(pokemon.name),
+        html:
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;text-align:left;font-size:1.1rem;margin-bottom:10px;">' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">TIPO</span>' + pokemon.typesEs.join(', ') + '</div>' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">GENERACION</span>' + (pokemon.generation != null ? pokemon.generation : '-') + '</div>' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">PESO</span>' + pokemon.weight + ' kg</div>' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">ALTURA</span>' + pokemon.height + ' m</div>' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">FORMA</span>' + (pokemon.shape ? cap(pokemon.shape) : '-') + '</div>' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">ESTETICA</span>' + (pokemon.aesthetic ? cap(pokemon.aesthetic) : '-') + '</div>' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">ETAPA EVOL.</span>' + (pokemon.evolutionStage ? 'Etapa ' + pokemon.evolutionStage : '-') + '</div>' +
+                '<div><span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">EVOLUCIONA DE</span>' + (pokemon.evolutionFrom ? cap(pokemon.evolutionFrom) : 'Base') + '</div>' +
+            '</div>' +
+            '<div style="text-align:left;font-size:1.1rem;margin-bottom:6px;">' +
+                '<span style="color:#39ff14;font-size:0.78rem;display:block;letter-spacing:1px">GENERO</span>' + (pokemon.genus || '-') +
+            '</div>' +
+            '<div style="text-align:left;font-size:0.82rem;border-top:1px solid #1a7a1a;padding-top:8px;margin-top:4px;line-height:1.7">' +
+                '<span style="color:#39ff14;font-size:0.78rem;display:block;margin-bottom:4px;letter-spacing:1px">CARACTERISTICAS</span>' +
+                pokemon.features.map(function(f) {
+                    return '<span style="display:inline-block;border:1px solid #1a7a1a;padding:1px 7px;margin:2px;color:#22b80e">' + f.replace(/_/g, ' ') + '</span>';
+                }).join('') +
+            '</div>',
+        imageUrl: imageUrl,
         imageHeight: 200,
-        imageAlt: `Imagen de ${pokemon.name}`,
+        imageAlt: 'Imagen de ' + pokemon.name,
     });
-    console.log(pokemon);
-    
+
     audio.volume = 0.1;
     audio.play();
 });
 
+/* ── Dark/Amber toggle ────────────────────────────────── */
 
-darkModeToggle.addEventListener("click", () => {
+darkModeToggle.addEventListener("click", function() {
     document.body.classList.toggle("dark-mode-body");
     darkModeToggle.innerHTML = document.body.classList.contains("dark-mode-body")
-        ? '<span>☀️ Light</span>'
-        : '<span>🌙 Dark</span>';
+        ? '<span>[GREEN]</span>'
+        : '<span>[AMBER]</span>';
 });
 
+/* ── Filter logic ─────────────────────────────────────── */
 
 function filteredPokemones() {
-    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-    const typeFilter = document.getElementById("typeFilter").value;
-    const aestheticFilter = document.getElementById("aestheticFilter").value;
-    const generationFilter = document.getElementById("generationFilter").value;
-    const shapeFilter = document.getElementById("shapeFilter").value;
-    const evolutionStageFilter = document.getElementById("evolutionStageFilter").value;
-    const legendaryFilter = document.getElementById("legendaryFilter").checked;
+    var searchTerm = document.getElementById("searchInput").value.toLowerCase();
+    var typeFilter = document.getElementById("typeFilter").value;
+    var aestheticFilter = document.getElementById("aestheticFilter").value;
+    var generationFilter = document.getElementById("generationFilter").value;
+    var shapeFilter = document.getElementById("shapeFilter").value;
+    var evolutionStageFilter = document.getElementById("evolutionStageFilter").value;
+    var legendaryFilter = document.getElementById("legendaryFilter").checked;
 
-    const filtered = allPokemons.filter(pokemon => {
-        const matchSearch = pokemon.name.includes(searchTerm);
-        const matchType = typeFilter === "all" || pokemon.types.includes(typeFilter);
-        const matchAesthetic = aestheticFilter === "all" || pokemon.aesthetic === aestheticFilter;
-        const matchGeneration = generationFilter === "all" || pokemon.generation === generationFilter;
-        const matchShape = shapeFilter === "all" || pokemon.shape === shapeFilter;
-        const matchFeatures = selectedFeatures.length === 0 ||
-            selectedFeatures.some(f => pokemon.features.includes(f));
-        const matchEvolutionStage = evolutionStageFilter === "all" || pokemon.evolutionStage === parseInt(evolutionStageFilter);
-        const matchLegendary = !legendaryFilter || pokemon.legendary;
-
+    var filtered = allPokemons.filter(function(pokemon) {
+        var matchSearch = pokemon.name.includes(searchTerm);
+        var matchType = typeFilter === "all" || pokemon.types.includes(typeFilter);
+        var matchAesthetic = aestheticFilter === "all" || pokemon.aesthetic === aestheticFilter;
+        var matchGeneration = generationFilter === "all" || String(pokemon.generation) === generationFilter;
+        var matchShape = shapeFilter === "all" || pokemon.shape === shapeFilter;
+        var matchFeatures = selectedFeatures.length === 0 ||
+            selectedFeatures.some(function(f) { return pokemon.features.includes(f); });
+        var matchEvolutionStage = evolutionStageFilter === "all" || pokemon.evolutionStage === parseInt(evolutionStageFilter);
+        var matchLegendary = !legendaryFilter || pokemon.legendary;
         return matchSearch && matchType && matchAesthetic && matchGeneration && matchShape && matchFeatures && matchEvolutionStage && matchLegendary;
     });
 
