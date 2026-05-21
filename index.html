@@ -100,10 +100,42 @@
                     <div class="multiselect-wrapper" id="featureFilter">
                         <button type="button" class="multiselect-btn" id="featureToggle">Todas ▼</button>
                         <div class="multiselect-dropdown hidden" id="featureDropdown">
+                            <div class="multiselect-header">
+                                <span class="multiselect-title">Características</span>
+                                <button type="button" class="multiselect-close" id="featureClose">✕</button>
+                            </div>
                             <input type="text" class="multiselect-search" placeholder="Buscar característica...">
                             <div class="multiselect-list" id="featureList"></div>
                             <button type="button" class="multiselect-clear" id="featureClear">Limpiar selección</button>
                         </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Rango de peso</label>
+                    <div class="weight-range-wrapper">
+                        <div class="weight-track">
+                            <div class="weight-range-fill" id="weightRangeFill"></div>
+                        </div>
+                        <input type="range" id="weightFilterMin" min="1" max="1000" value="1">
+                        <input type="range" id="weightFilterMax" min="1" max="1000" value="1000">
+                    </div>
+                    <div class="weight-labels">
+                        <span id="weightMinLabel">1 kg</span>
+                        <span id="weightMaxLabel">1000 kg</span>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Rango de altura</label>
+                    <div class="weight-range-wrapper">
+                        <div class="weight-track">
+                            <div class="weight-range-fill" id="heightRangeFill"></div>
+                        </div>
+                        <input type="range" id="heightFilterMin" min="0.1" max="20" step="0.1" value="0.1">
+                        <input type="range" id="heightFilterMax" min="0.1" max="20" step="0.1" value="20">
+                    </div>
+                    <div class="weight-labels">
+                        <span id="heightMinLabel">0.1 m</span>
+                        <span id="heightMaxLabel">20 m</span>
                     </div>
                 </div>
                 <div class="filter-group filter-legendary">

@@ -106,6 +106,7 @@ async function renderFeaturesOptions() {
     const dropdown = document.getElementById('featureDropdown');
     const searchInput = dropdown.querySelector('.multiselect-search');
     const clearBtn = document.getElementById('featureClear');
+    const closeBtn = document.getElementById('featureClose');
 
     list.innerHTML = features.map(f => `
         <label class="multiselect-item">
@@ -120,9 +121,10 @@ async function renderFeaturesOptions() {
         if (!dropdown.classList.contains('hidden')) searchInput.focus();
     });
 
-    // Cerrar al hacer click fuera
+    // Cerrar al hacer click fuera o en la X
     document.addEventListener('click', () => dropdown.classList.add('hidden'));
     dropdown.addEventListener('click', e => e.stopPropagation());
+    closeBtn.addEventListener('click', () => dropdown.classList.add('hidden'));
 
     // Normalizar texto para búsqueda (ignorar acentos y mayúsculas)
     const normalize = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -341,6 +343,55 @@ darkModeToggle.addEventListener("click", () => {
         : '<span>🌙 Dark</span>';
 });
 
+function updateWeightRange() {
+    const minSlider = document.getElementById("weightFilterMin");
+    const maxSlider = document.getElementById("weightFilterMax");
+    let minVal = parseInt(minSlider.value);
+    let maxVal = parseInt(maxSlider.value);
+    if (minVal > maxVal) {
+        [minSlider.value, maxSlider.value] = [maxSlider.value, minSlider.value];
+        [minVal, maxVal] = [maxVal, minVal];
+    }
+    const rangeMin = parseInt(minSlider.min);
+    const rangeMax = parseInt(minSlider.max);
+    const leftPct = ((minVal - rangeMin) / (rangeMax - rangeMin)) * 100;
+    const rightPct = ((maxVal - rangeMin) / (rangeMax - rangeMin)) * 100;
+    const fill = document.getElementById("weightRangeFill");
+    fill.style.left = leftPct + "%";
+    fill.style.width = (rightPct - leftPct) + "%";
+    document.getElementById("weightMinLabel").textContent = `${minVal} kg`;
+    document.getElementById("weightMaxLabel").textContent = `${maxVal} kg`;
+    filteredPokemones();
+}
+document.getElementById("weightFilterMin").addEventListener("input", updateWeightRange);
+document.getElementById("weightFilterMax").addEventListener("input", updateWeightRange);
+updateWeightRange();
+
+function updateHeightRange() {
+    const minSlider = document.getElementById("heightFilterMin");
+    const maxSlider = document.getElementById("heightFilterMax");
+    let minVal = parseFloat(minSlider.value);
+    let maxVal = parseFloat(maxSlider.value);
+    if (minVal > maxVal) {
+        [minSlider.value, maxSlider.value] = [maxSlider.value, minSlider.value];
+        [minVal, maxVal] = [maxVal, minVal];
+    }
+    const rangeMin = parseFloat(minSlider.min);
+    const rangeMax = parseFloat(minSlider.max);
+    const leftPct = ((minVal - rangeMin) / (rangeMax - rangeMin)) * 100;
+    const rightPct = ((maxVal - rangeMin) / (rangeMax - rangeMin)) * 100;
+    const fill = document.getElementById("heightRangeFill");
+    fill.style.left = leftPct + "%";
+    fill.style.width = (rightPct - leftPct) + "%";
+    document.getElementById("heightMinLabel").textContent = `${minVal.toFixed(1)} m`;
+    document.getElementById("heightMaxLabel").textContent = `${maxVal.toFixed(1)} m`;
+    filteredPokemones();
+}
+document.getElementById("heightFilterMin").addEventListener("input", updateHeightRange);
+document.getElementById("heightFilterMax").addEventListener("input", updateHeightRange);
+updateHeightRange();
+
+
 
 function filteredPokemones() {
     const searchTerm = document.getElementById("searchInput").value.toLowerCase();
@@ -350,6 +401,10 @@ function filteredPokemones() {
     const shapeFilter = document.getElementById("shapeFilter").value;
     const evolutionStageFilter = document.getElementById("evolutionStageFilter").value;
     const legendaryFilter = document.getElementById("legendaryFilter").checked;
+    const weightMinFilter = parseInt(document.getElementById("weightFilterMin").value);
+    const weightMaxFilter = parseInt(document.getElementById("weightFilterMax").value);
+    const heightMinFilter = parseFloat(document.getElementById("heightFilterMin").value);
+    const heightMaxFilter = parseFloat(document.getElementById("heightFilterMax").value);
 
     const filtered = allPokemons.filter(pokemon => {
         const matchSearch = pokemon.name.includes(searchTerm);
@@ -361,8 +416,10 @@ function filteredPokemones() {
             selectedFeatures.some(f => pokemon.features.includes(f));
         const matchEvolutionStage = evolutionStageFilter === "all" || pokemon.evolutionStage === parseInt(evolutionStageFilter);
         const matchLegendary = !legendaryFilter || pokemon.legendary;
+        const matchWeight = pokemon.weight >= weightMinFilter && pokemon.weight <= weightMaxFilter;
+        const matchHeight = pokemon.height >= heightMinFilter && pokemon.height <= heightMaxFilter;
 
-        return matchSearch && matchType && matchAesthetic && matchGeneration && matchShape && matchFeatures && matchEvolutionStage && matchLegendary;
+        return matchSearch && matchType && matchAesthetic && matchGeneration && matchShape && matchFeatures && matchEvolutionStage && matchLegendary && matchWeight && matchHeight;
     });
 
     currentPage = 1;
