@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v2.8";
+const CACHE_VERSION = "v2.9";
 const PAGE_SIZE = 20;
 
 const TYPE_COLORS = {
@@ -184,6 +184,7 @@ async function fetchPokemones() {
         sprite: p.sprites.front,
         gif: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${p.id}.gif`,
         cry: `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${p.id}.ogg`,
+        shinyGif: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/shiny/${p.id}.gif`,
         features: p.ai_analysis?.features ? p.ai_analysis.features.split(',') : [],
         aesthetic: p.ai_analysis?.aesthetic || 'unknown',
         shiny: p.sprites.shiny || null,
@@ -250,17 +251,38 @@ contenedor.addEventListener("click", async (event) => {
     if (!card) return;
 
     const id = parseInt(card.getAttribute("data-id"));
-    const pokemon = allPokemons.find(p => p.id === id); // sin fetch, todo ya está en memoria
+    const pokemon = allPokemons.find(p => p.id === id);
     const audio = new Audio(pokemon.cry);
 
-    const gifExists = await checkImage(pokemon.gif);
-    const imageUrl = gifExists ? pokemon.gif : pokemon.sprite;
-    
+    const [gifExists, shinyGifExists] = await Promise.all([
+        checkImage(pokemon.gif),
+        checkImage(pokemon.shinyGif),
+    ]);
+
+    const variants = [];
+    if (gifExists) variants.push({ url: pokemon.gif, label: 'GIF Normal' });
+    if (shinyGifExists) variants.push({ url: pokemon.shinyGif, label: '✨ GIF Shiny' });
+    variants.push({ url: pokemon.sprite, label: 'Sprite Normal' });
+    if (pokemon.shiny) variants.push({ url: pokemon.shiny, label: '✨ Sprite Shiny' });
+
+    const hasMultiple = variants.length > 1;
+    const dotsHtml = variants.map((_, i) =>
+        `<span class="swal-carousel-dot${i === 0 ? ' active' : ''}"></span>`
+    ).join('');
 
     const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
     Swal.fire({
         title: `#${pokemon.id} — ${cap(pokemon.name)}`,
         html: `
+            <div class="swal-carousel">
+                <button class="swal-carousel-btn swal-carousel-prev"${!hasMultiple ? ' style="visibility:hidden"' : ''}>&#8249;</button>
+                <div class="swal-carousel-img-wrap">
+                    <img id="swal-pokemon-img" src="${variants[0].url}" alt="${pokemon.name}">
+                    <span id="swal-pokemon-label" class="swal-carousel-label">${variants[0].label}</span>
+                    <div class="swal-carousel-dots">${dotsHtml}</div>
+                </div>
+                <button class="swal-carousel-btn swal-carousel-next"${!hasMultiple ? ' style="visibility:hidden"' : ''}>&#8250;</button>
+            </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; text-align:left; font-size:1.2rem; margin-bottom:10px;">
                 <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">TIPO</span>${pokemon.typesEs.join(', ')}</div>
                 <div><span style="color:#888; font-size:1rem; font-weight:bold; display:block">GENERACIÓN</span>${pokemon.generation ?? 'Desconocida'}</div>
@@ -279,12 +301,34 @@ contenedor.addEventListener("click", async (event) => {
                 ${pokemon.features.map(f => `<span style="display:inline-block; background:#f2f2f2; border-radius:4px; padding:1px 6px; margin:2px">${f.replace(/_/g, ' ')}</span>`).join('')}
             </div>
         `,
-        imageUrl,
-        imageHeight: 200,
-        imageAlt: `Imagen de ${pokemon.name}`,
+        didOpen: () => {
+            if (!hasMultiple) return;
+            let current = 0;
+            const img = document.getElementById('swal-pokemon-img');
+            const label = document.getElementById('swal-pokemon-label');
+            const dots = document.querySelectorAll('.swal-carousel-dot');
+            const prevBtn = document.querySelector('.swal-carousel-prev');
+            const nextBtn = document.querySelector('.swal-carousel-next');
+
+            function updateCarousel() {
+                img.src = variants[current].url;
+                label.textContent = variants[current].label;
+                dots.forEach((dot, i) => dot.classList.toggle('active', i === current));
+            }
+
+            prevBtn.addEventListener('click', () => {
+                current = (current - 1 + variants.length) % variants.length;
+                updateCarousel();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                current = (current + 1) % variants.length;
+                updateCarousel();
+            });
+        },
     });
     console.log(pokemon);
-    
+
     audio.volume = 0.1;
     audio.play();
 });
