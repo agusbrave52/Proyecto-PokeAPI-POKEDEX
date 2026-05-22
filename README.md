@@ -1,104 +1,113 @@
 # 📖 Pokédex — PokeAPI Project
- 
-Mini proyecto personal de una **Pokédex interactiva** construida con JavaScript Vanilla consumiendo la [PokéAPI](https://pokeapi.co/).
- 
-> 🔧 **Proyecto a mejorar** — funcional en su estado actual, con bastante margen para seguir creciendo.
- 
+
+Mini proyecto personal de una **Pokédex interactiva** construida con JavaScript Vanilla consumiendo datos locales de la [PokéAPI](https://pokeapi.co/), con más de 1025 Pokémon.
+
 ---
- 
+
 ## 📋 Descripción
- 
-Aplicación web que consume la PokéAPI para mostrar información de los Pokémon: imágenes, tipos, estadísticas y más. Todo el contenido del DOM es generado dinámicamente desde JavaScript, sin frameworks. Utiliza SweetAlert2 para los modales y notificaciones al usuario.
- 
+
+Aplicación web que muestra información detallada de los Pokémon: imágenes, tipos, estadísticas, sonidos y más. Todo el contenido del DOM es generado dinámicamente desde JavaScript, sin frameworks. Los datos de los Pokémon se almacenan en un JSON local (generado a partir de la PokéAPI) y se cachean en `localStorage` para carga instantánea. Incluye análisis de características generado por IA.
+
 ---
- 
-## ✨ Funcionalidades actuales
- 
-- ⚡ Consumo de la **PokéAPI** con `fetch` y `async/await`
-- 🃏 Renderizado dinámico de tarjetas de Pokémon generadas desde JS
-- 🎨 Estilos visuales diferenciados según el tipo de Pokémon
-- 🔔 Alertas y modales con **SweetAlert2**
-- 📱 Diseño responsive
- 
+
+## ✨ Funcionalidades
+
+### 🃏 Listado y navegación
+- Visualización de más de **1025 Pokémon** con tarjetas dinámicas
+- **Color de tarjeta** según el tipo principal del Pokémon
+- **Badge de legendario** en las tarjetas correspondientes
+- **Paginación** de 20 Pokémon por página con navegación dinámica
+- **Contador de resultados** actualizado en tiempo real
+
+### 🔍 Búsqueda y filtros
+- **Búsqueda por nombre** en tiempo real
+- **Filtro por tipo** (18 tipos con nombres en español)
+- **Filtro por generación** (Generación 1 a 9)
+- **Filtro por forma** (bípedo, cuadrúpedo, serpiente, etc.)
+- **Filtro por etapa evolutiva** (etapa 1, 2 o 3)
+- **Filtro solo legendarios** (checkbox)
+- **Filtro por estética** (categorías generadas por IA: cute, fierce, elegant, etc.)
+- **Filtro por características físicas** (multiselect con buscador, etiquetas generadas por IA)
+- **Filtro por peso** con slider de rango doble (mínimo y máximo en kg)
+- **Filtro por altura** con slider de rango doble (mínimo y máximo en m)
+
+### 📋 Vista de detalle
+Al hacer clic en una tarjeta se abre un modal con:
+- **Carrusel de sprites**: GIF animado normal, GIF animado shiny, sprite estático normal, sprite estático shiny
+- Datos completos: tipo, generación, peso, altura, forma, estética, etapa evolutiva, Pokémon del que evoluciona y género
+- **Características físicas** generadas por IA
+- **Sonido del Pokémon** (cry) al abrir el detalle
+
+### 🌙 Experiencia de usuario
+- **Modo oscuro / claro** con toggle en la barra superior
+- **Caché con versionado** en `localStorage` para carga instantánea tras la primera visita
+- **Diseño responsive** adaptado a mobile y escritorio
+
 ---
- 
+
 ## 🛠️ Tecnologías utilizadas
- 
+
 | Tecnología | Uso |
 |---|---|
-| HTML5 | Estructura base mínima |
-| CSS3 | Estilos visuales y responsive |
-| JavaScript (Vanilla) | Lógica, fetch a la API y renderizado del DOM |
-| [PokéAPI](https://pokeapi.co/) | Fuente de datos de los Pokémon (REST, sin auth) |
-| [SweetAlert2](https://sweetalert2.github.io/) v11 | Popups y alertas visuales (CDN) |
- 
+| HTML5 | Estructura base |
+| CSS3 | Estilos visuales, responsive y modo oscuro |
+| JavaScript (Vanilla) | Lógica, filtros, paginación y renderizado del DOM |
+| JSON local | Dataset de 1025 Pokémon generado desde la PokéAPI |
+| [PokéAPI](https://pokeapi.co/) | Fuente de datos original |
+| [SweetAlert2](https://sweetalert2.github.io/) v11 | Modal de detalle del Pokémon |
+| IA (análisis) | Generación de características físicas y estética de cada Pokémon |
+
 ---
- 
-## 🌐 Sobre la PokéAPI
- 
-Este proyecto usa la [PokéAPI](https://pokeapi.co/), una API REST pública y gratuita con datos de todos los Pokémon de la franquicia.
- 
-Endpoints principales utilizados:
- 
-```
-GET https://pokeapi.co/api/v2/pokemon/{id o nombre}
-GET https://pokeapi.co/api/v2/pokemon?limit={n}&offset={n}
-```
- 
-No requiere API key ni autenticación de ningún tipo.
- 
----
- 
+
 ## 📁 Estructura del proyecto
- 
+
 ```
 Proyecto-PokeAPI-POKEDEX/
 ├── index.html
 ├── style.css
-└── js/
-    └── poke.js
+├── js/
+│   └── poke.js
+└── data/
+    ├── pokemon_1-1025.json     # Dataset completo de Pokémon
+    └── pokemon_features.json   # Características físicas generadas por IA
 ```
- 
+
 ---
- 
+
 ## 🚀 Cómo usar
- 
+
 1. Cloná el repositorio:
    ```bash
    git clone https://github.com/agusbrave52/Proyecto-PokeAPI-POKEDEX.git
    ```
 2. Abrí `index.html` directamente en el navegador.
- 
+
 > No requiere instalación de dependencias, servidor local ni Node.js. Funciona abriendo el archivo HTML.
- 
+
 ---
- 
+
 ## 🔮 Mejoras planeadas
- 
-- [ ] Buscador por nombre o número de Pokémon
-- [ ] Filtros por tipo (fuego, agua, planta, etc.)
-- [ ] Vista de detalle individual con estadísticas completas (HP, ATK, DEF, etc.)
-- [ ] Animaciones en las tarjetas al hover
+
 - [ ] Soporte para formas alternativas y mega evoluciones
-- [ ] Modo oscuro / claro
 - [ ] Guardado de favoritos con `localStorage`
- 
+- [ ] Vista de cadena evolutiva completa
+
 ---
- 
+
 ## 📌 Estado del proyecto
- 
-🔵 **Funcional, en proceso de mejora** — mini proyecto personal con intención de crecer.
- 
+
+🟢 **Activo** — en constante mejora.
+
 ---
- 
+
 ## 👤 Autor
- 
-**Agustín Brave**
+
+**Agustín Bravo**
 - GitHub: [@agusbrave52](https://github.com/agusbrave52)
- 
+
 ---
- 
+
 ## 📄 Recursos
- 
+
 - [PokéAPI Docs](https://pokeapi.co/docs/v2)
 - [SweetAlert2 Docs](https://sweetalert2.github.io/)
